@@ -1,0 +1,13 @@
+"use strict";
+const weeks=[["寫作入學試煉","觀察與完整句"],["五感偵察任務","感官描寫"],["角色的秘密檔案","人物描寫"],["神秘物品說明書","有順序地介紹"],["事件的起點","交代事件要素"],["意外來訪者","起因、經過、結果"],["讓角色開口說話","對話與標點"],["心情變化魔法","情緒與心理描寫"],["迷宮裡的選擇","文章起承轉合"],["修改師的放大鏡","修改與潤飾"],["畢業任務企劃","列出作文大綱"],["畢業寫作挑戰","獨立完成文章"]];
+const grid=document.getElementById("courseGrid");
+weeks.forEach(([title,skill],i)=>{const card=document.createElement("article");card.className="week"+(i===0?" active":"");const num=document.createElement("small");num.textContent="WEEK "+String(i+1).padStart(2,"0");const h=document.createElement("h3");h.textContent=title;const p=document.createElement("p");p.textContent=skill+(i===0?"・立即體驗":"・內容準備中");card.append(num,h,p);grid.append(card)});
+const fields=["itemName","details","writing"].map(id=>document.getElementById(id));const checks=[...document.querySelectorAll(".checkitem")];const status=document.getElementById("status"),count=document.getElementById("count");const key="dongjia-writing-week01-v1";
+function refresh(){count.textContent="目前 "+[...fields[2].value.replace(/\s/g,"")].length+" 字"}
+function snapshot(){return {name:fields[0].value,details:fields[1].value,writing:fields[2].value,checks:checks.map(c=>c.checked)}}
+function restore(){try{const raw=localStorage.getItem(key);if(!raw)return;const v=JSON.parse(raw);[v.name,v.details,v.writing].forEach((s,i)=>fields[i].value=typeof s==="string"?s:"");checks.forEach((c,i)=>c.checked===false&&(c.checked=Boolean(v.checks?.[i])));status.textContent="已載入這台裝置上次儲存的作品。"}catch{status.textContent="無法讀取先前的儲存內容。"}refresh()}
+fields[2].addEventListener("input",refresh);
+document.getElementById("save").addEventListener("click",()=>{try{localStorage.setItem(key,JSON.stringify(snapshot()));status.textContent="已儲存在此瀏覽器。注意：清除瀏覽器資料後可能消失。"}catch{status.textContent="儲存失敗，請改用下載作品。"}});
+document.getElementById("export").addEventListener("click",()=>{const v=snapshot();const content="菄家｜第一週寫作入學試煉\n\n物品名稱："+v.name+"\n\n觀察細節：\n"+v.details+"\n\n我的短文：\n"+v.writing+"\n";const blob=new Blob([content],{type:"text/plain;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="菄家_第一週作品.txt";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent="已產生文字檔下載。"});
+document.getElementById("clear").addEventListener("click",()=>{if(!confirm("確定清空目前內容與這台裝置的儲存紀錄？"))return;fields.forEach(f=>f.value="");checks.forEach(c=>c.checked=false);try{localStorage.removeItem(key)}catch{}refresh();status.textContent="已清空。"});
+restore();
