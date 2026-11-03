@@ -217,7 +217,8 @@ try {
 } catch (_) { /* localStorage may be unavailable */ }
 state.week = Math.max(0, Math.min(11, Number(state.week) || 0));
 state.slide = Math.max(0, Math.min(6, Number(state.slide) || 0));
-if (query.has('week') && !isProjector && !isWorksheet) {
+if (query.has('reader') && !isProjector && !isWorksheet) page = 'reader';
+if (query.has('week') && !query.has('reader') && !isProjector && !isWorksheet) {
   state.week = Math.max(0, Math.min(11, (Number(query.get('week')) || 1) - 1));
   page = 'lesson';
 }
@@ -267,7 +268,7 @@ function header(active = 'home') {
     <a href="./" class="brand" data-action="home" aria-label="返回學院首頁"><span class="brand-mark">✦</span><span>菄家奇幻寫作學院<small>TEACHER-LED WRITING ACADEMY</small></span></a>
     <nav class="nav" aria-label="主選單">
       <button data-action="home" class="${active === 'home' ? 'active' : ''}">12 週課程</button>
-      <button data-action="continue" class="${active === 'lesson' ? 'active' : ''}">授課簡報</button>
+      <button data-action="continue" class="${active === 'lesson' ? 'active' : ''}">授課簡報</button><button data-action="reader" class="${active === 'reader' ? 'active' : ''}">墨墨朗讀室</button>
       <button data-action="open-projector" class="gold">開啟大螢幕 ↗</button>
     </nav></div></header>`;
 }
@@ -278,7 +279,7 @@ function homePage() {
       <div class="eyebrow light">FIRST TERM · 12 WEEK ADVENTURE</div>
       <h1>用故事點亮想像，<br>用方法寫好作文。</h1>
       <p>每週一堂 60 分鐘。老師帶領觀察、示範、提問與口說練習；學生最後拿起紙筆，寫下自己的文字。</p>
-      <button class="primary" data-action="continue">進入第 ${String(state.week + 1).padStart(2, '0')} 週課堂 →</button>
+      <button class="primary" data-action="continue">進入第 ${String(state.week + 1).padStart(2, '0')} 週課堂 →</button><button class="secondary hero-reader-btn" data-action="reader">讓墨墨朗讀我的作文 ♫</button>
     </div><div class="hero-icon-cluster"><div class="momo-hero">${momoMarkup("momo-wiggle")}<span class="momo-intro">嗨！我是墨墨，最喜歡聽你寫的故事！</span></div></div></section>
     <div class="intro-chips"><div class="intro-chip"><strong>授課對象</strong>｜國小三年級</div>
       <div class="intro-chip"><strong>上課模式</strong>｜老師操作・學生口說＋紙筆</div>
@@ -327,7 +328,7 @@ function lessonPage() {
   return `${header('lesson')}<main class="container">
     <div class="lesson-top"><div><div class="eyebrow">MISSION ${String(state.week+1).padStart(2,'0')} / 12 · 老師授課控制台</div>
       <h1>${escapeHTML(l.title)}</h1><p>本週技法：${escapeHTML(l.technique)}　｜　全程 60 分鐘　｜　學生以口說與紙筆參與</p></div>
-      <div class="lesson-actions"><button class="secondary" data-action="worksheet">列印本週學習單 ↗</button><button class="primary" data-action="open-projector">開啟大螢幕 ↗</button></div></div>
+      <div class="lesson-actions"><button class="secondary" data-action="reader">墨墨朗讀室 ♫</button><button class="secondary" data-action="worksheet">列印本週學習單 ↗</button><button class="primary" data-action="open-projector">開啟大螢幕 ↗</button></div></div>
     <div class="teacher-layout"><div><div class="stage-shell">
       <div class="stage-caption"><span>大螢幕投影片預覽</span><span>第 ${state.slide+1} / 7 張 · ${step.minutes} 分鐘</span></div>
       <div class="stage-frame">${slideMarkup()}</div>
@@ -335,7 +336,7 @@ function lessonPage() {
         <div class="step-dots">${STAGES.map((s,i)=>`<button data-action="goto" data-slide="${i}" aria-label="第 ${i+1} 張：${s.name}" title="${s.name}" class="${i===state.slide?'current':''}"></button>`).join('')}</div>
         <button data-action="next" ${state.slide===6?'disabled':''}>下一張 →</button></div>
     </div><div class="notice">操作提示：電腦與大螢幕都可以按「上一張／下一張」，也能使用鍵盤 ← / → 或空白鍵。兩個畫面會同步；將大螢幕視窗移到延伸螢幕後，可按 F11 放大。</div></div>
-    <aside class="sidebar" aria-label="老師備課與授課提示"><div class="side-card momo-side"><div class="momo-side-image">${momoMarkup("momo-wiggle")}</div><div><span class="side-tag">ACADEMY MASCOT</span><h3>墨墨來聽故事</h3><p>墨墨會陪伴課堂。作品朗讀功能將於文字輸入與拍照辨識完成後加入。</p></div></div>
+    <aside class="sidebar" aria-label="老師備課與授課提示"><div class="side-card momo-side"><div class="momo-side-image">${momoMarkup("momo-wiggle")}</div><div><span class="side-tag">ACADEMY MASCOT</span><h3>墨墨來聽故事</h3><p>墨墨會陪伴課堂。完成作文後，老師可核對文字，再請墨墨朗讀學生的作品。</p></div></div>
       <div class="side-card"><span class="side-tag">TEACHER NOTES · ${step.minutes} 分鐘</span><h3>${escapeHTML(step.name)}｜老師怎麼教</h3>
         <p>${escapeHTML(step.teacher)}</p>
         <blockquote><strong>老師可這樣說：</strong><br>${escapeHTML(teacherScript(l,state.slide))}</blockquote>
@@ -385,7 +386,7 @@ function render() {
   if (isWorksheet) { app.innerHTML = worksheetPage(); return; }
   if (isProjector) { app.innerHTML = projectorPage(); return; }
   document.title = '菄家｜奇幻寫作學院・教師授課版';
-  app.innerHTML = page==='lesson' ? lessonPage() : homePage();
+  app.innerHTML = page==='reader' ? readerPage() : page==='lesson' ? lessonPage() : homePage();
 }
 function navigateWeek(index) {
   state.week = Math.max(0, Math.min(11, index));
@@ -407,8 +408,9 @@ document.addEventListener('click', event=>{
   if (!button) return;
   if (button.tagName.toLowerCase()==='a') event.preventDefault();
   const action = button.dataset.action;
-  if (action==='home') { page='home'; history.replaceState(null,'',location.pathname); render(); window.scrollTo(0,0); }
-  if (action==='continue') navigateWeek(state.week);
+  if (action==='reader') { stopMomoSpeech(); page='reader'; history.replaceState(null,'',location.pathname+'?reader=1'); render(); window.scrollTo(0,0); }
+  if (action==='home') { stopMomoSpeech(); page='home'; history.replaceState(null,'',location.pathname); render(); window.scrollTo(0,0); }
+  if (action==='continue') { stopMomoSpeech(); navigateWeek(state.week); }
   if (action==='select-week') navigateWeek(Number(button.dataset.week));
   if (action==='select-adjacent') navigateWeek(state.week + Number(button.dataset.offset));
   if (action==='previous' && state.slide>0) { state.slide--; state.reveal=false; persist(); }
@@ -418,6 +420,11 @@ document.addEventListener('click', event=>{
   if (action==='open-projector') window.open(`${location.pathname}?projector=1`, '_blank', 'noopener');
   if (action==='worksheet') window.open(`${location.pathname}?worksheet=1&week=${state.week+1}`, '_blank', 'noopener');
   if (action==='print') window.print();
+  if (action==='momo-read') startMomoSpeech();
+  if (action==='momo-stop') stopMomoSpeech();
+  if (action==='momo-pause') toggleMomoPause();
+  if (action==='momo-ocr') recognizeMomoPhoto();
+  if (action==='momo-download') { const words=document.getElementById('momo-essay')?.value.trim(); if(words) downloadFile('我的作文.txt',words); }
   if (action==='export-notes') {
     let backup=null;
     try { backup=localStorage.getItem(LEGACY_KEY); } catch (_) {}
