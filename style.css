@@ -193,8 +193,21 @@ p { line-height: 1.75; }
 .side-buttons { display: flex; flex-wrap: wrap; gap: 7px; }
 .side-buttons button { padding: 10px 12px; border-radius: 10px; border: 1px solid #c9dacb; background: #eef5ef; color: #285b46; font-weight: 750; font-size: 13px; }
 .side-buttons button.primary { background: #267b62; color: #fff; border-color: #267b62; }
-.projector-root { height: 100vh; background: #0c2420; display: grid; place-items: center; padding: 2vh; }
-.projector-stage { width: min(96vw, 170.66vh); max-height: 96vh; aspect-ratio: 16/9; background: #fffdf7; overflow: hidden; box-shadow: 0 0 70px #0009; }
+.projector-root { min-height: 100vh; min-height: 100dvh; background: #0c2420; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; padding: 18px 24px 12px; }
+.projector-stage { width: min(94vw, 150vh); max-height: calc(100dvh - 115px); aspect-ratio: 16/9; background: #fffdf7; overflow: hidden; box-shadow: 0 0 70px #0009; }
+.projector-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; width: 100%; color: #e5f3e7; }
+.projector-controls button { font: inherit; border: 1px solid #829e8f; border-radius: 12px; min-height: 45px; padding: 10px 20px; background: #274c40; color: #fff; font-weight: 780; }
+.projector-controls button:hover:not(:disabled) { background: #35644f; border-color: #d2c092; }
+.projector-controls button:disabled { opacity: .35; cursor: default; }
+.projector-controls .next { background: #f1c77c; color: #23453b; border-color: #f1c77c; }
+.projector-controls .next:hover:not(:disabled) { background: #ffe0a4; color: #23453b; }
+.projector-controls .projector-reveal { background: #e8efe4; color: #2b624c; border-color: #c5dbc9; }
+.projector-progress { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 750; color: #c9e0d1; }
+.projector-dots { display: flex; align-items: center; gap: 8px; }
+.projector-controls .projector-dots button { padding: 0; min-height: 0; width: 11px; height: 11px; border: 1px solid #7b9688; border-radius: 50%; background: #507365; }
+.projector-controls .projector-dots button.current { width: 27px; border-radius: 9px; border-color: #f1c77c; background: #f1c77c; }
+.projector-controls .projector-dots button:focus-visible { outline: 3px solid #f1c77c; outline-offset: 4px; }
+.projector-hint { color: #91aa9d; font-size: 12px; letter-spacing: .05em; text-align: center; }
 .projector-stage .slide { font-size: 1.4em; }
 .projector-stage .slide h2 { font-size: clamp(38px, 4vw, 76px); }
 .projector-stage .slide-sub { font-size: clamp(19px, 1.9vw, 34px); }
@@ -251,6 +264,12 @@ p { line-height: 1.75; }
   .step-dots { gap: 3px; }
   .step-dots button { width: 7px; height: 7px; }
   .step-dots button.active { width: 16px; }
+  .projector-root { padding: 14px 10px; gap: 16px; }
+  .projector-stage { width: 96vw; }
+  .projector-controls { gap: 8px; }
+  .projector-controls button { min-height: 42px; padding: 8px 10px; font-size: 13px; }
+  .projector-progress { order: -1; width: 100%; justify-content: center; }
+  .projector-hint { font-size: 11px; }
 }
 @media print {
   @page { size: A4; margin: 0; }

@@ -233,20 +233,32 @@ function iconMarkup(index, extraClass = '') {
   return `<div class="illustration-wrap ${extraClass}" style="--icon-bg:${bg};--icon-ink:${ink}"><svg class="illustration" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="${escapeHTML(lesson.title)}圖示">${ICONS[lesson.icon]}</svg></div>`;
 }
 function persist(renderAfter = true) {
+  // 大螢幕也能翻頁；同步前保留教師控制台最新的備課文字，避免舊分頁覆蓋紀錄。
+  if (isProjector) {
+    try {
+      const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (latest.notes) state.notes = latest.notes;
+    } catch (_) {}
+  }
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
   try { channel?.postMessage({ type: 'sync', week: state.week, slide: state.slide, reveal: state.reveal }); } catch (_) {}
   if (renderAfter) render();
 }
 function applyLive(data) {
   if (!data || data.type !== 'sync') return;
-  state.week = Math.max(0, Math.min(11, Number(data.week) || 0));
-  state.slide = Math.max(0, Math.min(6, Number(data.slide) || 0));
-  state.reveal = !!data.reveal;
-  if (isProjector) render();
+  const week = Math.max(0, Math.min(11, Number(data.week) || 0));
+  const slide = Math.max(0, Math.min(6, Number(data.slide) || 0));
+  const reveal = !!data.reveal;
+  const changed = week !== state.week || slide !== state.slide || reveal !== state.reveal;
+  state.week = week;
+  state.slide = slide;
+  state.reveal = reveal;
+  // 兩邊都能操作，但不需因備課文字同步而反覆重繪整個畫面。
+  if (changed && !isWorksheet) render();
 }
 if (channel) channel.onmessage = e => applyLive(e.data);
 window.addEventListener('storage', e => {
-  if (e.key !== STORAGE_KEY || !isProjector) return;
+  if (e.key !== STORAGE_KEY || isWorksheet) return;
   try { applyLive({ type: 'sync', ...JSON.parse(e.newValue || '{}') }); } catch (_) {}
 });
 
@@ -321,7 +333,7 @@ function lessonPage() {
       <div class="stage-controls"><button data-action="previous" ${state.slide===0?'disabled':''}>← 上一張</button>
         <div class="step-dots">${STAGES.map((s,i)=>`<button data-action="goto" data-slide="${i}" aria-label="第 ${i+1} 張：${s.name}" title="${s.name}" class="${i===state.slide?'current':''}"></button>`).join('')}</div>
         <button data-action="next" ${state.slide===6?'disabled':''}>下一張 →</button></div>
-    </div><div class="notice">操作提示：鍵盤 ← / → 切換投影片。開啟大螢幕後，將新視窗移到延伸螢幕並按 F11，即可只顯示學生要看的內容。</div></div>
+    </div><div class="notice">操作提示：電腦與大螢幕都可以按「上一張／下一張」，也能使用鍵盤 ← / → 或空白鍵。兩個畫面會同步；將大螢幕視窗移到延伸螢幕後，可按 F11 放大。</div></div>
     <aside class="sidebar" aria-label="老師備課與授課提示">
       <div class="side-card"><span class="side-tag">TEACHER NOTES · ${step.minutes} 分鐘</span><h3>${escapeHTML(step.name)}｜老師怎麼教</h3>
         <p>${escapeHTML(step.teacher)}</p>
@@ -342,8 +354,19 @@ function lessonPage() {
     </aside></div></main>${footer()}`;
 }
 function projectorPage() {
-  document.title = `${LESSONS[state.week].title}｜大螢幕投影片`; 
-  return `<main class="projector-root"><div class="projector-stage">${slideMarkup()}</div></main>`;
+  document.title = `${LESSONS[state.week].title}｜大螢幕投影片`;
+  return `<main class="projector-root">
+    <div class="projector-stage">${slideMarkup()}</div>
+    <nav class="projector-controls" aria-label="老師操作投影片">
+      <button class="projector-nav" data-action="previous" ${state.slide===0?'disabled':''} aria-label="上一張投影片">← 上一張</button>
+      <div class="projector-progress"><span aria-live="polite">${state.slide+1} / 7</span>
+        <div class="projector-dots">${STAGES.map((s,i)=>`<button data-action="goto" data-slide="${i}" class="${i===state.slide?'current':''}" aria-label="跳至第 ${i+1} 張：${s.name}" aria-current="${i===state.slide?'step':'false'}" title="${s.name}"></button>`).join('')}</div>
+      </div>
+      ${state.slide===2?`<button class="projector-reveal" data-action="reveal">${state.reveal?'收起示範':'揭曉示範 ✦'}</button>`:''}
+      <button class="projector-nav next" data-action="next" ${state.slide===6?'disabled':''} aria-label="下一張投影片">下一張 →</button>
+    </nav>
+    <div class="projector-hint">老師操作｜點按按鈕或使用鍵盤 ← →、空白鍵</div>
+  </main>`;
 }
 function worksheetPage() {
   const index = Math.max(0, Math.min(11, (Number(query.get('week')) || (state.week + 1)) - 1));
@@ -408,8 +431,10 @@ document.addEventListener('input', event=>{
   persist(false);
 });
 document.addEventListener('keydown', event=>{
-  if (isWorksheet || isProjector || page!=='lesson' || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
-  if (event.key==='ArrowRight' && state.slide<6) { event.preventDefault(); state.slide++; state.reveal=false; persist(); }
-  if (event.key==='ArrowLeft' && state.slide>0) { event.preventDefault(); state.slide--; state.reveal=false; persist(); }
+  if (isWorksheet || (!isProjector && page!=='lesson') || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+  const next = event.key==='ArrowRight' || event.key==='PageDown' || (event.code==='Space' && (isProjector || document.activeElement.tagName!=='BUTTON'));
+  const previous = event.key==='ArrowLeft' || event.key==='PageUp';
+  if (next && state.slide<6) { event.preventDefault(); state.slide++; state.reveal=false; persist(); }
+  if (previous && state.slide>0) { event.preventDefault(); state.slide--; state.reveal=false; persist(); }
 });
 render();
