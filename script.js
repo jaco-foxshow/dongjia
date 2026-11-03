@@ -271,6 +271,7 @@ function header(active = 'home') {
       <button data-action="open-projector" class="gold">開啟大螢幕 ↗</button>
     </nav></div></header>`;
 }
+function momoMarkup(className = '') { return `<img class="momo-mascot ${className}" src="./assets/momo-mascot.png" alt="墨墨：戴著金色墨水瓶蓋、頭頂露出小羽毛的墨水小怪獸" loading="lazy" draggable="false">`; }
 function homePage() {
   return `${header('home')}<main class="container">
     <section class="hero"><div>
@@ -278,7 +279,7 @@ function homePage() {
       <h1>用故事點亮想像，<br>用方法寫好作文。</h1>
       <p>每週一堂 60 分鐘。老師帶領觀察、示範、提問與口說練習；學生最後拿起紙筆，寫下自己的文字。</p>
       <button class="primary" data-action="continue">進入第 ${String(state.week + 1).padStart(2, '0')} 週課堂 →</button>
-    </div><div class="hero-icon-cluster"><div class="hero-circle">${iconMarkup(0)}</div></div></section>
+    </div><div class="hero-icon-cluster"><div class="momo-hero">${momoMarkup("momo-wiggle")}<span class="momo-intro">嗨！我是墨墨，最喜歡聽你寫的故事！</span></div></div></section>
     <div class="intro-chips"><div class="intro-chip"><strong>授課對象</strong>｜國小三年級</div>
       <div class="intro-chip"><strong>上課模式</strong>｜老師操作・學生口說＋紙筆</div>
       <div class="intro-chip"><strong>每堂流程</strong>｜技法 → 示範 → 練習 → 寫作</div>
@@ -297,7 +298,7 @@ function slideMarkup(index = state.week, step = state.slide, reveal = state.reve
   const l = LESSONS[index];
   const kicker = `任務 ${String(index + 1).padStart(2,'0')} · ${STAGES[step].name} · ${STAGES[step].minutes} 分鐘`;
   let body = '';
-  if (step === 0) body = `<div class="slide-hero"><div class="slide-hero-text"><h2>${escapeHTML(l.title)}</h2><p>${escapeHTML(l.prompt)}</p></div>${iconMarkup(index)}</div><div class="slide-banner">今日任務：學會「${escapeHTML(l.technique)}」，讓讀者看懂你的想法。</div>`;
+  if (step === 0) body = `<div class="slide-hero"><div class="slide-hero-text"><h2>${escapeHTML(l.title)}</h2><p>${escapeHTML(l.prompt)}</p></div>${iconMarkup(index)}</div><div class="slide-banner">今日任務：學會「${escapeHTML(l.technique)}」，讓讀者看懂你的想法。</div><div class="momo-slide-corner">${momoMarkup("momo-wiggle")}</div>`;
   if (step === 1) body = `<h2>今天的寫作祕技</h2><p class="slide-sub">${escapeHTML(l.technique)}：把想法一步一步變成清楚的句子。</p>
     <div class="technique-box"><div class="eyebrow">魔法公式</div><div class="technique-formula">${escapeHTML(l.formula)}</div></div>
     <div class="tech-steps">${l.steps.map((s,i)=>`<div class="tech-step"><b>STEP ${i+1}</b><span>${escapeHTML(s)}</span></div>`).join('')}</div>`;
@@ -307,7 +308,7 @@ function slideMarkup(index = state.week, step = state.slide, reveal = state.reve
   if (step === 3) body = `<h2>先說出來，再寫下來</h2><p class="slide-sub">老師依序提問。可以說很多，再選出最重要的細節。</p><div class="prompt-grid">${l.oral.map((s,i)=>`<div class="prompt-card"><span class="number">${i+1}</span><span>${escapeHTML(s)}</span></div>`).join('')}</div>`;
   if (step === 4) body = `<h2>三格大綱，把內容排好</h2><p class="slide-sub">先口頭說出每一格的重點，不用立刻寫完整句。</p><div class="outline-grid">${l.outline.map((s,i)=>`<div class="outline-cell"><b>${i+1}. ${escapeHTML(s)}</b><small>我想放進文章的關鍵字……</small></div>`).join('')}</div>`;
   if (step === 5) body = `<h2>輪到你動筆了 ✎</h2><p class="slide-sub">寫在紙上，不必在電腦輸入。先求清楚，再求精彩。</p><div class="slide-banner">寫作目標：${escapeHTML(l.writing)}</div><div class="paper-visual">${Array.from({length:6},()=>'<div></div>').join('')}</div>`;
-  if (step === 6) body = `<h2>朗讀一次，完成小作家檢查</h2><p class="slide-sub">先分享你最喜歡的一句，再看看能不能自己修好。</p><div class="checklist">${l.check.map(s=>`<div>□ ${escapeHTML(s)}</div>`).join('')}</div>`;
+  if (step === 6) body = `<h2>朗讀一次，完成小作家檢查</h2><p class="slide-sub">先分享你最喜歡的一句，再看看能不能自己修好。</p><div class="momo-finish"><div class="checklist">${l.check.map(s=>`<div>□ ${escapeHTML(s)}</div>`).join('')}</div>${momoMarkup("momo-wiggle")}</div>`;
   return `<section class="slide" aria-label="${escapeHTML(STAGES[step].name)}"><div class="slide-kicker">${escapeHTML(kicker)}</div>${body}</section>`;
 }
 function teacherScript(l, step) {
@@ -334,7 +335,7 @@ function lessonPage() {
         <div class="step-dots">${STAGES.map((s,i)=>`<button data-action="goto" data-slide="${i}" aria-label="第 ${i+1} 張：${s.name}" title="${s.name}" class="${i===state.slide?'current':''}"></button>`).join('')}</div>
         <button data-action="next" ${state.slide===6?'disabled':''}>下一張 →</button></div>
     </div><div class="notice">操作提示：電腦與大螢幕都可以按「上一張／下一張」，也能使用鍵盤 ← / → 或空白鍵。兩個畫面會同步；將大螢幕視窗移到延伸螢幕後，可按 F11 放大。</div></div>
-    <aside class="sidebar" aria-label="老師備課與授課提示">
+    <aside class="sidebar" aria-label="老師備課與授課提示"><div class="side-card momo-side"><div class="momo-side-image">${momoMarkup("momo-wiggle")}</div><div><span class="side-tag">ACADEMY MASCOT</span><h3>墨墨來聽故事</h3><p>墨墨會陪伴課堂。作品朗讀功能將於文字輸入與拍照辨識完成後加入。</p></div></div>
       <div class="side-card"><span class="side-tag">TEACHER NOTES · ${step.minutes} 分鐘</span><h3>${escapeHTML(step.name)}｜老師怎麼教</h3>
         <p>${escapeHTML(step.teacher)}</p>
         <blockquote><strong>老師可這樣說：</strong><br>${escapeHTML(teacherScript(l,state.slide))}</blockquote>
